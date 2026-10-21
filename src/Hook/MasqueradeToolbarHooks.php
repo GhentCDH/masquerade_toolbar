@@ -15,8 +15,9 @@ use Drupal\user\RoleInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
 
 /**
- * The "Masquerade" tab of the toolbar, with "Unmasquerade" next to it while
- * masquerading; and a "Switch back" button for users without the toolbar.
+ * The "Masquerade" tab of the toolbar: a menu with the roles, and
+ * "Unmasquerade" first while masquerading; and a "Switch back" button for
+ * users without the toolbar.
  */
 final class MasqueradeToolbarHooks {
 
@@ -35,7 +36,6 @@ final class MasqueradeToolbarHooks {
     // The tab differs per session: who masquerades, and as which role.
     $cache = ['#cache' => ['contexts' => ['user', 'session'], 'tags' => ['config:user_role_list']]];
     $items['masquerade_toolbar'] = $cache;
-    $items['masquerade_toolbar_back'] = $cache;
 
     $masquerading = $this->testUsers->isMasquerading();
     // The roles are those of the user who masquerades.
@@ -47,6 +47,14 @@ final class MasqueradeToolbarHooks {
     $destination = ['query' => ['destination' => $this->requestUri()]];
 
     $links = [];
+    if ($masquerading) {
+      $back = $this->backLink();
+      $links['unmasquerade'] = [
+        'title' => $back['#title'],
+        'url' => $back['#url'],
+        'attributes' => ['class' => ['masquerade-toolbar__back']],
+      ];
+    }
     foreach ($this->entityTypeManager->getStorage('user_role')->loadMultiple() as $role) {
       if ($role->id() === RoleInterface::ANONYMOUS_ID || !$this->neverUp->allowsRole($actor, $role)) {
         continue;
@@ -71,7 +79,7 @@ final class MasqueradeToolbarHooks {
             '#value' => $this->t('Masquerade'),
             '#attributes' => [
               'type' => 'button',
-              'class' => ['toolbar-icon', 'toolbar-icon-masquerade-toolbar', 'masquerade-toolbar-menu__toggle'],
+              'class' => array_merge(['toolbar-icon', 'toolbar-icon-masquerade-toolbar', 'masquerade-toolbar-menu__toggle'], $masquerading ? ['is-masquerading'] : []),
               'title' => $this->t('See the site as a role'),
               'aria-expanded' => 'false',
               'aria-haspopup' => 'true',
@@ -87,22 +95,12 @@ final class MasqueradeToolbarHooks {
         '#attached' => ['library' => ['masquerade_toolbar/toolbar']],
       ];
     }
-    if ($masquerading) {
-      // Floated right too: just before the tab in the markup, so right of it.
-      $items['masquerade_toolbar_back'] += [
-        '#type' => 'toolbar_item',
-        '#weight' => 3397,
-        'tab' => $this->backLink() + ['#attributes' => ['class' => ['toolbar-icon', 'toolbar-icon-masquerade-toolbar-back']]],
-        '#wrapper_attributes' => ['class' => ['masquerade-toolbar-tab']],
-        '#attached' => ['library' => ['masquerade_toolbar/toolbar']],
-      ];
-    }
     return $items;
   }
 
   #[Hook('toolbar_alter')]
   public function toolbarAlter(array &$items): void {
-    // "Unmasquerade" is next to the Masquerade tab instead.
+    // "Unmasquerade" is in the Masquerade menu instead.
     unset($items['masquerade_switch_back']);
   }
 

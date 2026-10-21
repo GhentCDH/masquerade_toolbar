@@ -25,6 +25,13 @@ final class TestUsers {
 
   private KeyValueStoreInterface $store;
 
+  /**
+   * The test users (role => user ID), read once per request.
+   *
+   * @var array<string, int>|null
+   */
+  private ?array $uids = NULL;
+
   public function __construct(
     KeyValueFactoryInterface $keyValueFactory,
     private readonly EntityTypeManagerInterface $entityTypeManager,
@@ -41,7 +48,7 @@ final class TestUsers {
    */
   public function forRole(RoleInterface $role): UserInterface {
     $storage = $this->entityTypeManager->getStorage('user');
-    $uid = $this->store->get($role->id());
+    $uid = $this->all()[$role->id()] ?? NULL;
     if ($uid && ($account = $storage->load($uid))) {
       return $account;
     }
@@ -61,6 +68,7 @@ final class TestUsers {
   public function save(UserInterface $account, RoleInterface $role): void {
     $account->save();
     $this->store->set($role->id(), (int) $account->id());
+    $this->uids = NULL;
   }
 
   /**
@@ -70,7 +78,7 @@ final class TestUsers {
     if (!$uid) {
       return NULL;
     }
-    $role = array_search((int) $uid, $this->store->getAll(), TRUE);
+    $role = array_search((int) $uid, $this->all(), TRUE);
     return $role === FALSE ? NULL : (string) $role;
   }
 
@@ -80,7 +88,7 @@ final class TestUsers {
    * @return array<string, int>
    */
   public function all(): array {
-    return $this->store->getAll();
+    return $this->uids ??= array_map('intval', $this->store->getAll());
   }
 
   /**
@@ -88,6 +96,7 @@ final class TestUsers {
    */
   public function forget(string $role): void {
     $this->store->delete($role);
+    $this->uids = NULL;
   }
 
   /**
@@ -110,13 +119,15 @@ final class TestUsers {
    * content goes to Anonymous.
    */
   public function delete(?string $role = NULL): void {
-    $uids = $role ? array_filter([$role => $this->store->get($role)]) : $this->store->getAll();
+    $all = $this->all();
+    $uids = $role ? array_filter([$role => $all[$role] ?? NULL]) : $all;
     foreach ($this->entityTypeManager->getStorage('user')->loadMultiple($uids) as $account) {
       // As "Delete the account and make its content belong to Anonymous".
       \Drupal::moduleHandler()->invokeAll('user_cancel', [[], $account, 'user_cancel_reassign']);
       $account->delete();
     }
     $role ? $this->store->delete($role) : $this->store->deleteAll();
+    $this->uids = NULL;
   }
 
   /**

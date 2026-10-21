@@ -33,11 +33,16 @@ final class MasqueradeToolbarHooks {
 
   #[Hook('toolbar')]
   public function toolbar(): array {
-    // The tab differs per session: who masquerades, and as which role.
-    $cache = ['#cache' => ['contexts' => ['user', 'session'], 'tags' => ['config:user_role_list']]];
-    $items['masquerade_toolbar'] = $cache;
-
     $masquerading = $this->testUsers->isMasquerading();
+    // Users who cannot masquerade get no tab; their toolbar keeps caching per
+    // permissions. For the others, the tab differs per session: who
+    // masquerades, and as which role.
+    if (!$masquerading && !$this->testUsers->maySee($this->currentUser)) {
+      $items['masquerade_toolbar'] = ['#cache' => ['contexts' => ['user.permissions', 'session.is_masquerading']]];
+      return $items;
+    }
+    $items['masquerade_toolbar'] = ['#cache' => ['contexts' => ['user', 'session'], 'tags' => ['config:user_role_list']]];
+
     // The roles are those of the user who masquerades.
     $actor = $masquerading ? $this->testUsers->masquerader() : $this->currentUser;
     if (!$actor) {

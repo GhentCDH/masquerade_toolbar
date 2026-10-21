@@ -48,7 +48,18 @@ masquerading:
 Which accounts are test users is stored by this module, not derived from
 their names.
 
+## Requirements
+
+Masquerade 2.2, and core's Toolbar module (installed with this module). The
+menu is part of the Toolbar: on a site with the Navigation module instead,
+there is no menu, but the rules above still apply to Masquerade.
+
 ## Setup
 
     composer require drupal/masquerade_toolbar
     drush en masquerade_toolbar
+
+## Tests
+
+Kernel tests for the rules (never up, the test users), and a functional test
+for the menu: `phpunit --group masquerade_toolbar`.

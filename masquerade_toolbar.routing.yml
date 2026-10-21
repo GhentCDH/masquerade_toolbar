@@ -7,5 +7,5 @@ masquerade_toolbar.role:
       user_role:
         type: entity:user_role
   requirements:
-    _masquerade_switch_access: 'TRUE'
+    _custom_access: '\Drupal\masquerade_toolbar\Controller\RoleController::access'
     _csrf_token: 'TRUE'

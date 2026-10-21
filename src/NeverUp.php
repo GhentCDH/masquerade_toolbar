@@ -19,6 +19,17 @@ final class NeverUp {
   public function __construct(private readonly EntityTypeManagerInterface $entityTypeManager) {}
 
   /**
+   * Whether an account may masquerade as the test user of a role:
+   * Masquerade's permission for the role, and never up.
+   */
+  public function allowsRole(AccountInterface $account, RoleInterface $role): bool {
+    $permitted = (int) $account->id() === 1
+      || $account->hasPermission('masquerade as any user')
+      || $account->hasPermission('masquerade as ' . $role->id());
+    return $permitted && $this->allows($account, [$role->id()]);
+  }
+
+  /**
    * Whether an account may masquerade as an account with these roles.
    *
    * @param string[] $target_roles

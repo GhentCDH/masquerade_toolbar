@@ -135,6 +135,14 @@ final class TestUsers {
   }
 
   /**
+   * Returns the user who masquerades in this session, or NULL.
+   */
+  public function masquerader(): ?UserInterface {
+    $uid = \Drupal::request()->getSession()->getMetadataBag()->getMasquerade();
+    return $uid ? $this->entityTypeManager->getStorage('user')->load($uid) : NULL;
+  }
+
+  /**
    * Whether the current session masquerades.
    */
   public function isMasquerading(): bool {

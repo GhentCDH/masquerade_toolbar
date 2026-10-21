@@ -5,9 +5,12 @@ See the site as a role with one click, from the toolbar. Builds on
 
 - **Masquerade**, at the right of the toolbar: a button per role you may
   masquerade as, and *Another user…*, which opens Masquerade's own form.
-- **Switching back**: Masquerade's *Unmasquerade* tab, or a *Switch back*
-  button at the bottom right for users without the toolbar. Both keep you on
-  the same page.
+- **Switch roles while masquerading**: the buttons stay, the current role
+  highlighted. Another role switches back and on in one click; which roles
+  you see is decided by you, not by the test user.
+- **Unmasquerade**, in red next to the Masquerade tab (instead of
+  Masquerade's own tab), or a button at the bottom right for users without
+  the toolbar. Both keep you on the same page.
 
 ## Never up
 

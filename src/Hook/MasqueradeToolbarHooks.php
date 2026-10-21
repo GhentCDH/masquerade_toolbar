@@ -9,14 +9,14 @@ use Drupal\Core\Hook\Attribute\Hook;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\Url;
-use Drupal\masquerade\Masquerade;
 use Drupal\masquerade_toolbar\NeverUp;
+use Drupal\masquerade_toolbar\TestUsers;
 use Drupal\user\RoleInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
 
 /**
- * The "Masquerade" tab of the toolbar, and a "Switch back" button for users
- * without the toolbar.
+ * The "Masquerade" tab of the toolbar, with "Unmasquerade" next to it while
+ * masquerading; and a "Switch back" button for users without the toolbar.
  */
 final class MasqueradeToolbarHooks {
 
@@ -26,96 +26,118 @@ final class MasqueradeToolbarHooks {
     private readonly AccountInterface $currentUser,
     private readonly EntityTypeManagerInterface $entityTypeManager,
     private readonly RequestStack $requestStack,
-    private readonly Masquerade $masquerade,
+    private readonly TestUsers $testUsers,
     private readonly NeverUp $neverUp,
   ) {}
 
   #[Hook('toolbar')]
   public function toolbar(): array {
-    $items['masquerade_toolbar'] = ['#cache' => ['contexts' => ['user.permissions', 'session.is_masquerading'], 'tags' => ['config:user_role_list']]];
-    // While masquerading, Masquerade's own "Unmasquerade" tab switches back.
-    if ($this->masquerade->isMasquerading()) {
+    // The tab differs per session: who masquerades, and as which role.
+    $cache = ['#cache' => ['contexts' => ['user', 'session'], 'tags' => ['config:user_role_list']]];
+    $items['masquerade_toolbar'] = $cache;
+    $items['masquerade_toolbar_back'] = $cache;
+
+    $masquerading = $this->testUsers->isMasquerading();
+    // The roles are those of the user who masquerades.
+    $actor = $masquerading ? $this->testUsers->masquerader() : $this->currentUser;
+    if (!$actor) {
       return $items;
     }
-    $destination = ['query' => ['destination' => $this->requestStack->getCurrentRequest()->getRequestUri()]];
+    $current_role = $masquerading ? $this->testUsers->roleOf($this->currentUser->id()) : NULL;
+    $destination = ['query' => ['destination' => $this->requestUri()]];
+
     $links = [];
     foreach ($this->entityTypeManager->getStorage('user_role')->loadMultiple() as $role) {
-      if ($role->id() === RoleInterface::ANONYMOUS_ID || !$this->mayMasqueradeAs($role)) {
+      if ($role->id() === RoleInterface::ANONYMOUS_ID || !$this->neverUp->allowsRole($actor, $role)) {
         continue;
       }
       $links[$role->id()] = [
         'title' => $role->label(),
         'url' => Url::fromRoute('masquerade_toolbar.role', ['user_role' => $role->id()], $destination),
+        'attributes' => $role->id() === $current_role ? ['class' => ['is-active'], 'aria-current' => 'true'] : [],
       ];
     }
-    $other = Url::fromRoute('masquerade.block');
-    if (!$links && !$other->access()) {
-      return $items;
-    }
-    if ($other->access()) {
+    // Another user: Masquerade's form; while masquerading, after switching back.
+    $form = Url::fromRoute('masquerade.block');
+    $other = $masquerading
+      ? Url::fromRoute('masquerade.unmasquerade', [], ['query' => ['destination' => $form->toString()]])
+      : $form;
+    if ($masquerading || $form->access()) {
       $links['other'] = [
         'title' => $this->t('Another user…'),
         'url' => $other,
         'attributes' => ['class' => ['masquerade-toolbar__other']],
       ];
     }
-    $items['masquerade_toolbar'] += [
-      '#type' => 'toolbar_item',
-      '#weight' => 3398,
-      'tab' => [
-        '#type' => 'link',
-        '#title' => $this->t('Masquerade'),
-        '#url' => $other,
-        '#attributes' => ['title' => $this->t('See the site as a role or another user'), 'class' => ['toolbar-icon', 'toolbar-icon-masquerade-toolbar']],
-      ],
-      'tray' => [
-        '#heading' => $this->t('Masquerade'),
-        'links' => [
-          '#theme' => 'links',
-          '#links' => $links,
-          '#attributes' => ['class' => ['masquerade-toolbar']],
+
+    if ($links) {
+      $items['masquerade_toolbar'] += [
+        '#type' => 'toolbar_item',
+        '#weight' => 3398,
+        'tab' => [
+          '#type' => 'link',
+          '#title' => $this->t('Masquerade'),
+          '#url' => $form,
+          '#attributes' => ['title' => $this->t('See the site as a role or another user'), 'class' => ['toolbar-icon', 'toolbar-icon-masquerade-toolbar']],
         ],
-      ],
-      '#wrapper_attributes' => ['class' => ['masquerade-toolbar-tab']],
-      '#attached' => ['library' => ['masquerade_toolbar/toolbar']],
-    ];
+        'tray' => [
+          '#heading' => $this->t('Masquerade'),
+          'links' => [
+            '#theme' => 'links',
+            '#links' => $links,
+            '#attributes' => ['class' => ['masquerade-toolbar']],
+          ],
+        ],
+        '#wrapper_attributes' => ['class' => ['masquerade-toolbar-tab']],
+        '#attached' => ['library' => ['masquerade_toolbar/toolbar']],
+      ];
+    }
+    if ($masquerading) {
+      // Floated right too: just before the tab in the markup, so right of it.
+      $items['masquerade_toolbar_back'] += [
+        '#type' => 'toolbar_item',
+        '#weight' => 3397,
+        'tab' => $this->backLink() + ['#attributes' => ['class' => ['toolbar-icon', 'toolbar-icon-masquerade-toolbar-back']]],
+        '#wrapper_attributes' => ['class' => ['masquerade-toolbar-tab']],
+        '#attached' => ['library' => ['masquerade_toolbar/toolbar']],
+      ];
+    }
     return $items;
   }
 
   #[Hook('toolbar_alter')]
   public function toolbarAlter(array &$items): void {
-    // Masquerade's "Unmasquerade" tab: stay on the same page.
-    if (isset($items['masquerade_switch_back']['tab']['#url'])) {
-      $items['masquerade_switch_back']['tab']['#url']->setOption('query', ['destination' => $this->requestStack->getCurrentRequest()->getRequestUri()]);
-      $items['masquerade_switch_back']['#cache']['contexts'][] = 'url';
-    }
+    // "Unmasquerade" is next to the Masquerade tab instead.
+    unset($items['masquerade_switch_back']);
   }
 
   #[Hook('page_top')]
   public function pageTop(array &$page_top): void {
-    // Users without the toolbar (and so without "Unmasquerade") get a button.
+    // Users without the toolbar get the button on the page.
     $page_top['masquerade_toolbar'] = ['#cache' => ['contexts' => ['user.permissions', 'session.is_masquerading']]];
-    if (!$this->masquerade->isMasquerading() || $this->currentUser->hasPermission('access toolbar')) {
+    if (!$this->testUsers->isMasquerading() || $this->currentUser->hasPermission('access toolbar')) {
       return;
     }
-    $page_top['masquerade_toolbar'] += [
-      '#type' => 'link',
-      '#title' => $this->t('Switch back'),
-      '#url' => Url::fromRoute('masquerade.unmasquerade', [], ['query' => ['destination' => $this->requestStack->getCurrentRequest()->getRequestUri()]]),
+    $page_top['masquerade_toolbar'] += $this->backLink() + [
       '#attributes' => ['class' => ['masquerade-toolbar-back']],
       '#attached' => ['library' => ['masquerade_toolbar/toolbar']],
     ];
   }
 
   /**
-   * Whether the current user may masquerade as users with (only) this role:
-   * Masquerade's permission, and never up.
+   * Returns the link that switches back, to the same page.
    */
-  private function mayMasqueradeAs(RoleInterface $role): bool {
-    $permitted = $this->currentUser->id() == 1
-      || $this->currentUser->hasPermission('masquerade as any user')
-      || $this->currentUser->hasPermission('masquerade as ' . $role->id());
-    return $permitted && $this->neverUp->allows($this->currentUser, [$role->id()]);
+  private function backLink(): array {
+    $masquerader = $this->testUsers->masquerader();
+    return [
+      '#type' => 'link',
+      '#title' => $masquerader ? $this->t('Unmasquerade (@name)', ['@name' => $masquerader->getDisplayName()]) : $this->t('Unmasquerade'),
+      '#url' => Url::fromRoute('masquerade.unmasquerade', [], ['query' => ['destination' => $this->requestUri()]]),
+    ];
+  }
+
+  private function requestUri(): string {
+    return $this->requestStack->getCurrentRequest()->getRequestUri();
   }
 
 }

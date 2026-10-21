@@ -1,0 +1,4 @@
+delete masquerade test users:
+  title: 'Delete masquerade test users'
+  description: 'The test users are recreated the next time someone masquerades as their role. Their content then belongs to Anonymous.'
+  restrict access: true

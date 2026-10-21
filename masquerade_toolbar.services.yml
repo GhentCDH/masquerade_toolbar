@@ -1,0 +1,9 @@
+services:
+  Drupal\masquerade_toolbar\TestUsers:
+    autowire: true
+  Drupal\masquerade_toolbar\EventSubscriber\TestUserLoginSubscriber:
+    autowire: true
+    tags:
+      - { name: event_subscriber }
+  Drupal\masquerade_toolbar\NeverUp:
+    autowire: true

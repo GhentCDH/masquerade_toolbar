@@ -1,0 +1,19 @@
+<?php
+
+/**
+ * @file
+ * Install and uninstall of Masquerade toolbar.
+ */
+
+declare(strict_types=1);
+
+use Drupal\masquerade_toolbar\TestUsers;
+
+/**
+ * Implements hook_uninstall().
+ *
+ * Deletes the test users; their content goes to Anonymous.
+ */
+function masquerade_toolbar_uninstall(): void {
+  \Drupal::service(TestUsers::class)->delete();
+}

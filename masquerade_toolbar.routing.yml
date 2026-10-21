@@ -1,0 +1,11 @@
+masquerade_toolbar.role:
+  path: '/masquerade/role/{user_role}'
+  defaults:
+    _controller: '\Drupal\masquerade_toolbar\Controller\RoleController::switchTo'
+  options:
+    parameters:
+      user_role:
+        type: entity:user_role
+  requirements:
+    _masquerade_switch_access: 'TRUE'
+    _csrf_token: 'TRUE'

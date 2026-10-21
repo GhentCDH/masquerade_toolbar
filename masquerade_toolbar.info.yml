@@ -1,0 +1,8 @@
+name: 'Masquerade toolbar'
+type: module
+description: 'Masquerade as a role with one click, from a dropdown in the toolbar.'
+package: Development
+core_version_requirement: ^10.3 || ^11
+dependencies:
+  - drupal:toolbar
+  - masquerade:masquerade

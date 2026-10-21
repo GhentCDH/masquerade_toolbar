@@ -1,0 +1,9 @@
+{
+    "name": "drupal/masquerade_toolbar",
+    "description": "Masquerade as a role with one click, from a dropdown in the toolbar.",
+    "type": "drupal-module",
+    "license": "GPL-2.0-or-later",
+    "require": {
+        "drupal/masquerade": "^2.2"
+    }
+}

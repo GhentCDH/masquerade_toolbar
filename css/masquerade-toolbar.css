@@ -1,7 +1,8 @@
 /**
  * @file
- * The "Masquerade" tab: at the right of the toolbar, with the roles as a row
- * of buttons; and the "Switch back" button for users without the toolbar.
+ * The "Masquerade" tab: at the right of the toolbar, with the roles in a
+ * menu under it; "Unmasquerade" next to it; and a button for users without
+ * the toolbar.
  */
 
 .toolbar .toolbar-bar .masquerade-toolbar-tab.toolbar-tab {
@@ -16,44 +17,74 @@
   background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23ffffff' viewBox='0 0 16 16'%3e%3cpath d='M1 4.5C1 3.7 1.7 3 2.5 3h11c.8 0 1.5.7 1.5 1.5V7c0 3-2.2 5-4.5 5-1.3 0-2-.9-2.5-1.8-.5.9-1.2 1.8-2.5 1.8C3.2 12 1 10 1 7V4.5zm3 2.5a1.25 1.25 0 1 0 2.5 0A1.25 1.25 0 0 0 4 7zm5.5 0a1.25 1.25 0 1 0 2.5 0 1.25 1.25 0 0 0-2.5 0z'/%3e%3c/svg%3e");
 }
 
-.toolbar .toolbar-tray ul.masquerade-toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+.toolbar .toolbar-bar .masquerade-toolbar-menu {
+  position: relative;
+  padding: 0;
+}
+
+.toolbar .toolbar-bar .masquerade-toolbar-menu__toggle {
+  height: 100%;
   margin: 0;
-  padding: 0.75rem 1rem;
+  padding: 1em 1.3333em 1em 2.75em;
+  cursor: pointer;
+  color: inherit;
+  border: 0;
+  background-color: transparent;
+  font: inherit;
+  font-weight: bold;
+}
+
+.toolbar .toolbar-bar .masquerade-toolbar-menu.is-open .masquerade-toolbar-menu__toggle,
+.toolbar .toolbar-bar .masquerade-toolbar-menu__toggle:hover,
+.toolbar .toolbar-bar .masquerade-toolbar-menu__toggle:focus {
+  background-color: #333;
+}
+
+/* The menu, under the button: over the trays (z-index 501) of the toolbar. */
+.toolbar .toolbar-bar ul.masquerade-toolbar {
+  position: absolute;
+  z-index: 510;
+  top: 100%;
+  right: 0;
+  display: none;
+  min-width: 14rem;
+  margin: 0;
+  padding: 0.25rem 0;
   list-style: none;
+  border: 1px solid #d3d4d9;
+  border-radius: 0 0 0.5rem 0.5rem;
+  background: #fff;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 20%);
   font-size: 0.875rem;
 }
 
-.toolbar .toolbar-tray ul.masquerade-toolbar li {
+.toolbar .toolbar-bar .masquerade-toolbar-menu.is-open ul.masquerade-toolbar {
+  display: block;
+}
+
+.toolbar .toolbar-bar ul.masquerade-toolbar li {
   float: none;
   margin: 0;
 }
 
-.toolbar .toolbar-tray ul.masquerade-toolbar a {
+.toolbar .toolbar-bar ul.masquerade-toolbar a {
   display: block;
-  padding: 0.35rem 0.75rem;
-  border: 1px solid #d3d4d9;
-  border-radius: 1rem;
+  padding: 0.6rem 1rem;
   color: #222330;
+  font-weight: normal;
   text-decoration: none;
 }
 
-.toolbar .toolbar-tray ul.masquerade-toolbar a:hover,
-.toolbar .toolbar-tray ul.masquerade-toolbar a:focus {
-  border-color: #003ecc;
+.toolbar .toolbar-bar ul.masquerade-toolbar a:hover,
+.toolbar .toolbar-bar ul.masquerade-toolbar a:focus {
   color: #003ecc;
+  background: #f3f4f9;
 }
 
-.toolbar .toolbar-tray ul.masquerade-toolbar a.is-active {
-  border-color: #003ecc;
-  background: #003ecc;
-  color: #fff;
-}
-
-.toolbar .toolbar-tray ul.masquerade-toolbar a.masquerade-toolbar__other {
-  border-style: dashed;
+.toolbar .toolbar-bar ul.masquerade-toolbar a.is-active {
+  color: #003ecc;
+  background: #e6ecf8;
+  font-weight: bold;
 }
 
 /* "Unmasquerade", next to the Masquerade tab. */

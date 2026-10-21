@@ -57,31 +57,26 @@ final class MasqueradeToolbarHooks {
         'attributes' => $role->id() === $current_role ? ['class' => ['is-active'], 'aria-current' => 'true'] : [],
       ];
     }
-    // Another user: Masquerade's form; while masquerading, after switching back.
-    $form = Url::fromRoute('masquerade.block');
-    $other = $masquerading
-      ? Url::fromRoute('masquerade.unmasquerade', [], ['query' => ['destination' => $form->toString()]])
-      : $form;
-    if ($masquerading || $form->access()) {
-      $links['other'] = [
-        'title' => $this->t('Another user…'),
-        'url' => $other,
-        'attributes' => ['class' => ['masquerade-toolbar__other']],
-      ];
-    }
-
     if ($links) {
+      // A menu under the button (not a toolbar tray across the screen).
       $items['masquerade_toolbar'] += [
         '#type' => 'toolbar_item',
         '#weight' => 3398,
         'tab' => [
-          '#type' => 'link',
-          '#title' => $this->t('Masquerade'),
-          '#url' => $form,
-          '#attributes' => ['title' => $this->t('See the site as a role or another user'), 'class' => ['toolbar-icon', 'toolbar-icon-masquerade-toolbar']],
-        ],
-        'tray' => [
-          '#heading' => $this->t('Masquerade'),
+          '#type' => 'container',
+          '#attributes' => ['class' => ['masquerade-toolbar-menu']],
+          'toggle' => [
+            '#type' => 'html_tag',
+            '#tag' => 'button',
+            '#value' => $this->t('Masquerade'),
+            '#attributes' => [
+              'type' => 'button',
+              'class' => ['toolbar-icon', 'toolbar-icon-masquerade-toolbar', 'masquerade-toolbar-menu__toggle'],
+              'title' => $this->t('See the site as a role'),
+              'aria-expanded' => 'false',
+              'aria-haspopup' => 'true',
+            ],
+          ],
           'links' => [
             '#theme' => 'links',
             '#links' => $links,

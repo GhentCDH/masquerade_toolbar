@@ -3,9 +3,9 @@
 See the site as a role with one click, from the toolbar. Builds on
 [Masquerade](https://www.drupal.org/project/masquerade).
 
-- **Masquerade**, at the right of the toolbar: a button per role you may
-  masquerade as, and *Another user…*, which opens Masquerade's own form.
-- **Switch roles while masquerading**: the buttons stay, the current role
+- **Masquerade**, at the right of the toolbar: a menu under the button with
+  the roles you may masquerade as. It closes on a click elsewhere or Escape.
+- **Switch roles while masquerading**: the menu stays, the current role
   highlighted. Another role switches back and on in one click; which roles
   you see is decided by you, not by the test user.
 - **Unmasquerade**, in red next to the Masquerade tab (instead of
@@ -14,7 +14,7 @@ See the site as a role with one click, from the toolbar. Builds on
 
 ## Never up
 
-For all of Masquerade, also *Another user…*:
+For all of Masquerade, also its own form and block:
 
 - nobody masquerades as an administrator role (administrators do not need
   to);

@@ -37,7 +37,7 @@ final class TestUserHooks {
   #[Hook('masquerade_access')]
   public function masqueradeAccess(AccountInterface $user, UserInterface $target_account): ?bool {
     // Not to an administrator role, and never to more permissions: for all of
-    // Masquerade, also "Another user…". FALSE wins over any TRUE.
+    // Masquerade, also its own form and block. FALSE wins over any TRUE.
     return $this->neverUp->allows($user, $target_account->getRoles()) ? NULL : FALSE;
   }
 

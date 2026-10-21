@@ -2,3 +2,8 @@ toolbar:
   css:
     component:
       css/masquerade-toolbar.css: {}
+  js:
+    js/masquerade-toolbar.js: {}
+  dependencies:
+    - core/drupal
+    - core/once

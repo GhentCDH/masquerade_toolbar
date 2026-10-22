@@ -88,6 +88,9 @@ final class TestUsersTest extends KernelTestBase {
     $this->assertTrue($account->access('view', $masquerader));
     $this->assertFalse($account->access('delete', $user_admin));
     $this->assertTrue($account->access('delete', $deleter), 'Deleting needs its own permission.');
+    $this->assertFalse($account->access('view label', $user_admin));
+    $this->assertTrue($account->access('view label', $account), 'While masquerading, as the author of content.');
+    $this->assertFalse($account->access('update', $account));
   }
 
   public function testHiddenFromLists(): void {
@@ -99,6 +102,14 @@ final class TestUsersTest extends KernelTestBase {
 
     $this->setCurrentUser($this->createUser(['administer users', 'masquerade as editor']));
     $this->assertContains($account->id(), array_values($query()));
+
+    // While masquerading: itself, as the author of what it saves.
+    $writer = $this->createRole([], 'writer', 'Writer');
+    $other = $this->testUsers->forRole(Role::load($writer));
+    $this->testUsers->save($other, Role::load($writer));
+    $this->setCurrentUser($account);
+    $this->assertContains($account->id(), array_values($query()));
+    $this->assertNotContains($other->id(), array_values($query()));
   }
 
   public function testDeletingARoleDeletesItsTestUser(): void {

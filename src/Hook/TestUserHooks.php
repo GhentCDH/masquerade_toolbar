@@ -47,8 +47,9 @@ final class TestUserHooks {
       return AccessResult::neutral();
     }
     $allowed = match ($operation) {
-      // Also the test user itself, while someone masquerades as it.
-      'view' => $this->testUsers->maySee($user) || $account->id() == $user->id(),
+      // Also the test user itself, while someone masquerades as it: as the
+      // author of what it saves, for one.
+      'view', 'view label' => $this->testUsers->maySee($user) || $account->id() == $user->id(),
       'delete' => $user->hasPermission('delete masquerade test users'),
       // Nobody edits a test user.
       default => FALSE,
@@ -62,8 +63,9 @@ final class TestUserHooks {
 
   #[Hook('query_user_access_alter')]
   public function queryAlter(AlterableInterface $query): void {
-    // People list, user autocompletes: only for users who may masquerade.
-    $uids = $this->testUsers->all();
+    // People list, user autocompletes: only for users who may masquerade; and
+    // the test user itself, while someone masquerades as it.
+    $uids = array_diff($this->testUsers->all(), [$this->currentUser->id()]);
     if (!$uids || $this->testUsers->maySee($this->currentUser)) {
       return;
     }
